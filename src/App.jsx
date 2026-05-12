@@ -46,6 +46,91 @@ function SectionTitle({ children }) {
   return <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-widest mb-4">{children}</h2>
 }
 
+function PRComments({ repo, prNumber, prTitle, onClose }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["comments", repo, prNumber],
+    queryFn: () => fetchComments(repo, prNumber),
+  })
+
+  const icons = { critical: "🔴", warning: "🟡", suggestion: "🔵" }
+  const comments = data?.comments || []
+  const critical   = comments.filter(c => c.severity === "critical")
+  const warnings   = comments.filter(c => c.severity === "warning")
+  const suggestions= comments.filter(c => c.severity === "suggestion")
+
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-start justify-center p-6 overflow-y-auto">
+      <div className="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-3xl">
+
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-zinc-800">
+          <div>
+            <p className="text-xs text-zinc-500 mb-1">PR #{prNumber}</p>
+            <h2 className="text-white font-medium text-lg">{prTitle}</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-zinc-500 hover:text-white transition-colors text-2xl leading-none"
+          >×</button>
+        </div>
+
+        {/* Body */}
+        <div className="p-6">
+          {isLoading ? (
+            <p className="text-zinc-500 animate-pulse text-sm">Loading comments...</p>
+          ) : comments.length === 0 ? (
+            <p className="text-zinc-500 text-sm">No comments found for this PR.</p>
+          ) : (
+            <div className="space-y-6">
+
+              {/* Summary pills */}
+              <div className="flex gap-3">
+                <span className="text-xs bg-red-400/10 text-red-400 border border-red-400/20 px-3 py-1 rounded-full">
+                  🔴 {critical.length} critical
+                </span>
+                <span className="text-xs bg-amber-400/10 text-amber-400 border border-amber-400/20 px-3 py-1 rounded-full">
+                  🟡 {warnings.length} warnings
+                </span>
+                <span className="text-xs bg-blue-400/10 text-blue-400 border border-blue-400/20 px-3 py-1 rounded-full">
+                  🔵 {suggestions.length} suggestions
+                </span>
+              </div>
+
+              {/* Comments grouped by severity */}
+              {[
+                { label: "Critical Issues", items: critical, color: "border-red-400/30 bg-red-400/5" },
+                { label: "Warnings",        items: warnings, color: "border-amber-400/30 bg-amber-400/5" },
+                { label: "Suggestions",     items: suggestions, color: "border-blue-400/30 bg-blue-400/5" },
+              ].map(({ label, items, color }) =>
+                items.length > 0 && (
+                  <div key={label}>
+                    <p className="text-xs text-zinc-500 uppercase tracking-widest mb-3">{label}</p>
+                    <div className="space-y-3">
+                      {items.map((c, i) => (
+                        <div key={i} className={`border rounded-xl p-4 ${color}`}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-mono text-xs text-zinc-400 bg-zinc-800 px-2 py-0.5 rounded">
+                              {c.filename}
+                            </span>
+                            {c.line && (
+                              <span className="text-xs text-zinc-600">line {c.line}</span>
+                            )}
+                          </div>
+                          <p className="text-sm text-zinc-300 leading-relaxed">{c.body}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function Dashboard({ repo }) {
   const { data: metrics, isLoading: mLoading } = useQuery({ queryKey: ["metrics", repo], queryFn: () => fetchMetrics(repo) })
   const { data: reviewsData, isLoading: rLoading } = useQuery({ queryKey: ["reviews", repo], queryFn: () => fetchReviews(repo) })
