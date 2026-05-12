@@ -14,6 +14,7 @@ const queryClient = new QueryClient()
 const fetchRepos  = () => axios.get(`${API}/api/repos`).then(r => r.data)
 const fetchMetrics = (repo) => axios.get(`${API}/api/metrics?repo=${encodeURIComponent(repo)}`).then(r => r.data)
 const fetchReviews = (repo) => axios.get(`${API}/api/reviews?repo=${encodeURIComponent(repo)}`).then(r => r.data)
+const fetchComments = (repo, pr_number) => axios.get(`${API}/api/comments?repo=${encodeURIComponent(repo)}&pr_number=${pr_number}`).then(r => r.data)
 
 // ── Score color helper ────────────────────────────────────
 
